@@ -4,6 +4,56 @@
 import { useState, useRef } from 'react';
 import Link from 'next/link';
 
+// Enhanced image compression function
+const compressImage = (file: File, maxWidth: number = 1600): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        // Calculate new dimensions
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        // More aggressive compression for larger files
+        const quality = file.size > 2000000 ? 0.7 : 0.8; // 70% for files >2MB
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const compressedFile = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            } else {
+              reject(new Error('Compression failed'));
+            }
+          },
+          'image/jpeg',
+          quality
+        );
+      };
+      img.onerror = reject;
+    };
+    reader.onerror = reject;
+  });
+};
+
 export default function Upload() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
@@ -12,21 +62,34 @@ export default function Upload() {
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      setUploadSuccess(false);
-      setError('');
+const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (file) {
+    setUploadSuccess(false);
+    setError('');
+    
+    try {
+      // Compress image before setting
+      const compressedFile = await compressImage(file);
+      setSelectedFile(compressedFile);
       
       // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewUrl(reader.result as string);
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(compressedFile);
+      
+      // Log compression results
+      console.log('Original size:', (file.size / 1024).toFixed(2), 'KB');
+      console.log('Compressed size:', (compressedFile.size / 1024).toFixed(2), 'KB');
+      console.log('Reduction:', ((1 - compressedFile.size / file.size) * 100).toFixed(1), '%');
+    } catch (err) {
+      console.error('Compression error:', err);
+      setError('Failed to process image. Please try again.');
     }
-  };
+  }
+};
 
   const handleUpload = async () => {
     if (!selectedFile) return;
@@ -198,16 +261,19 @@ export default function Upload() {
               )}
 
               {/* Upload Info */}
-              {selectedFile && (
-                <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-gray-700">
-                    <strong>File:</strong> {selectedFile.name}
-                  </p>
-                  <p className="text-sm text-gray-700">
-                    <strong>Size:</strong> {(selectedFile.size / 1024).toFixed(2)} KB
-                  </p>
-                </div>
-              )}
+        {selectedFile && (
+          <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+            <p className="text-sm text-gray-700">
+            <strong>File:</strong> {selectedFile.name}
+            </p>
+            <p className="text-sm text-gray-700">
+            <strong>Size:</strong> {(selectedFile.size / 1024).toFixed(2)} KB
+          </p>
+          <p className="text-xs text-green-700 mt-1">
+          ✓ Image optimized for fast upload
+          </p>
+          </div>
+          )}
 
               {/* Action Buttons */}
               <div className="space-y-3">
