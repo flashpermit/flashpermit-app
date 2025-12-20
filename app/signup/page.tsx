@@ -20,11 +20,13 @@ export default function Signup() {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('Signup:', formData);
-    alert('Signup coming soon! Building in Week 1, Day 2-3');
-  };
+const handleSubmit = (e: React.FormEvent) => {
+  e.preventDefault();
+  console.log('Signup:', formData);
+  // TODO: Real authentication in Day 3
+  // For now, just redirect to dashboard
+  window.location.href = '/dashboard';
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center p-4">

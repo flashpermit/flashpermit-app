@@ -7,11 +7,13 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('Login:', { email, password });
-    alert('Login coming soon! Building in Week 1, Day 2-3');
-  };
+const handleSubmit = (e: React.FormEvent) => {
+  e.preventDefault();
+  console.log('Login:', { email, password });
+  // TODO: Real authentication in Day 3
+  // For now, just redirect to dashboard
+  window.location.href = '/dashboard';
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center p-4">
