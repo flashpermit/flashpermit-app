@@ -1,3 +1,4 @@
+import Link from 'next/link';
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center">
@@ -22,9 +23,11 @@ export default function Home() {
         </p>
 
         {/* CTA Button */}
-        <button className="bg-yellow-400 text-blue-900 px-8 py-4 rounded-lg text-xl font-bold hover:bg-yellow-300 transition-all transform hover:scale-105">
-          Get Started
-        </button>
+        <Link href="/signup">
+          <button className="bg-yellow-400 text-blue-900 px-8 py-4 rounded-lg text-xl font-bold hover:bg-yellow-300 transition-all transform hover:scale-105">
+            Get Started
+          </button>
+        </Link>
 
         {/* Status Badge */}
         <div className="mt-12">
