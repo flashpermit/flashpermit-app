@@ -249,7 +249,7 @@ export default function Upload() {
           <ul className="space-y-2 text-blue-100">
             <li>• Make sure the nameplate is clearly visible</li>
             <li>• Good lighting helps with accuracy</li>
-            <li>• Avoid glare and shadow</li>
+            <li>• Avoid glare and shadows</li>
             <li>• Get close enough to read the text</li>
           </ul>
         </div>
