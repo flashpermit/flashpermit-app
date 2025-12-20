@@ -1,11 +1,16 @@
-// Week 1 Day 2 - Photo upload with Azure Storage
 'use client';
 
 import { useState, useRef } from 'react';
 import Link from 'next/link';
 
-// Enhanced image compression function
-const compressImage = (file: File, maxWidth: number = 1600): Promise<File> => {
+// Detect if user is on mobile
+const isMobileDevice = () => {
+  if (typeof window === 'undefined') return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+};
+
+// Enhanced image compression with mobile optimization
+const compressImage = (file: File): Promise<File> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -16,6 +21,11 @@ const compressImage = (file: File, maxWidth: number = 1600): Promise<File> => {
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
+
+        // More aggressive compression for mobile devices
+        const isMobile = isMobileDevice();
+        const maxWidth = isMobile ? 1200 : 1600;
+        const quality = isMobile ? 0.6 : 0.7; // 60% for mobile, 70% for desktop
 
         // Calculate new dimensions
         if (width > maxWidth) {
@@ -29,9 +39,6 @@ const compressImage = (file: File, maxWidth: number = 1600): Promise<File> => {
         const ctx = canvas.getContext('2d');
         ctx?.drawImage(img, 0, 0, width, height);
 
-        // More aggressive compression for larger files
-        const quality = file.size > 2000000 ? 0.7 : 0.8; // 70% for files >2MB
-
         canvas.toBlob(
           (blob) => {
             if (blob) {
@@ -39,6 +46,13 @@ const compressImage = (file: File, maxWidth: number = 1600): Promise<File> => {
                 type: 'image/jpeg',
                 lastModified: Date.now(),
               });
+              
+              // Log compression details
+              console.log('Device:', isMobile ? 'Mobile' : 'Desktop');
+              console.log('Original size:', (file.size / 1024).toFixed(2), 'KB');
+              console.log('Compressed size:', (blob.size / 1024).toFixed(2), 'KB');
+              console.log('Reduction:', ((1 - blob.size / file.size) * 100).toFixed(1), '%');
+              
               resolve(compressedFile);
             } else {
               reject(new Error('Compression failed'));
@@ -60,36 +74,32 @@ export default function Upload() {
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [useCamera, setUseCamera] = useState(true); // Toggle between camera and file upload
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (file) {
-    setUploadSuccess(false);
-    setError('');
-    
-    try {
-      // Compress image before setting
-      const compressedFile = await compressImage(file);
-      setSelectedFile(compressedFile);
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUploadSuccess(false);
+      setError('');
       
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result as string);
-      };
-      reader.readAsDataURL(compressedFile);
-      
-      // Log compression results
-      console.log('Original size:', (file.size / 1024).toFixed(2), 'KB');
-      console.log('Compressed size:', (compressedFile.size / 1024).toFixed(2), 'KB');
-      console.log('Reduction:', ((1 - compressedFile.size / file.size) * 100).toFixed(1), '%');
-    } catch (err) {
-      console.error('Compression error:', err);
-      setError('Failed to process image. Please try again.');
+      try {
+        // Compress image before setting
+        const compressedFile = await compressImage(file);
+        setSelectedFile(compressedFile);
+        
+        // Create preview
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPreviewUrl(reader.result as string);
+        };
+        reader.readAsDataURL(compressedFile);
+      } catch (err) {
+        console.error('Compression error:', err);
+        setError('Failed to process image. Please try again.');
+      }
     }
-  }
-};
+  };
 
   const handleUpload = async () => {
     if (!selectedFile) return;
@@ -130,6 +140,10 @@ const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
   return (
@@ -206,51 +220,81 @@ const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
             </div>
           ) : (
             <>
+              {/* Camera/File Toggle (Mobile Only) */}
+              {isMobileDevice() && (
+                <div className="mb-6 flex gap-2">
+                  <button
+                    onClick={() => setUseCamera(true)}
+                    className={`flex-1 py-3 rounded-lg font-semibold transition-colors ${
+                      useCamera
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    📸 Take Photo
+                  </button>
+                  <button
+                    onClick={() => setUseCamera(false)}
+                    className={`flex-1 py-3 rounded-lg font-semibold transition-colors ${
+                      !useCamera
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    📁 Upload File
+                  </button>
+                </div>
+              )}
+
               {/* Upload Area */}
               <div className="mb-6">
-                <label className="block text-center">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                  />
-                  
-                  {!previewUrl ? (
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 hover:border-blue-500 cursor-pointer transition-colors">
-                      <div className="text-center">
-                        <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        <p className="text-lg font-semibold text-gray-700 mb-2">
-                          Take Photo or Upload Image
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          Click to open camera or select from files
-                        </p>
-                      </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture={useCamera ? 'environment' : undefined}
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                
+                {!previewUrl ? (
+                  <div 
+                    onClick={triggerFileInput}
+                    className="border-2 border-dashed border-gray-300 rounded-lg p-12 hover:border-blue-500 cursor-pointer transition-colors"
+                  >
+                    <div className="text-center">
+                      <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <p className="text-lg font-semibold text-gray-700 mb-2">
+                        {useCamera ? 'Take Photo' : 'Upload Image'}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {useCamera 
+                          ? 'Click to open camera'
+                          : 'Click to select from files'
+                        }
+                      </p>
                     </div>
-                  ) : (
-                    <div className="relative">
-                      <img 
-                        src={previewUrl} 
-                        alt="Preview" 
-                        className="max-w-full rounded-lg shadow-md mx-auto"
-                      />
-                      <button
-                        onClick={handleReset}
-                        className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                  )}
-                </label>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <img 
+                      src={previewUrl} 
+                      alt="Preview" 
+                      className="max-w-full rounded-lg shadow-md mx-auto"
+                    />
+                    <button
+                      onClick={handleReset}
+                      className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Error Message */}
@@ -261,19 +305,19 @@ const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
               )}
 
               {/* Upload Info */}
-        {selectedFile && (
-          <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-            <p className="text-sm text-gray-700">
-            <strong>File:</strong> {selectedFile.name}
-            </p>
-            <p className="text-sm text-gray-700">
-            <strong>Size:</strong> {(selectedFile.size / 1024).toFixed(2)} KB
-          </p>
-          <p className="text-xs text-green-700 mt-1">
-          ✓ Image optimized for fast upload
-          </p>
-          </div>
-          )}
+              {selectedFile && (
+                <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-gray-700">
+                    <strong>File:</strong> {selectedFile.name}
+                  </p>
+                  <p className="text-sm text-gray-700">
+                    <strong>Size:</strong> {(selectedFile.size / 1024).toFixed(2)} KB
+                  </p>
+                  <p className="text-xs text-green-700 mt-1">
+                    ✓ Image optimized for {isMobileDevice() ? 'mobile' : 'fast'} upload
+                  </p>
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className="space-y-3">
