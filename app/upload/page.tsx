@@ -416,11 +416,24 @@ export default function Upload() {
                   Upload Another
                 </button>
                 <button
-                  onClick={() => router.push('/dashboard')}
-                  className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-                >
-                  Continue to Permit
-                </button>
+                  onClick={() => {
+                    // Navigate to permit form with extracted data
+                    const params = new URLSearchParams({
+                    manufacturer: extractedData.manufacturer || '',
+                    model: extractedData.model || '',
+                    serialNumber: extractedData.serialNumber || '',
+                    btu: extractedData.btu?.toString() || '',
+                    voltage: extractedData.voltage || '',
+                    seer: extractedData.seer?.toString() || '',
+                    refrigerant: extractedData.refrigerant || '',
+                    equipmentType: extractedData.equipmentType || '',
+                  });
+                  window.location.href = `/permit/new?${params.toString()}`;
+                }}
+                className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+              >
+                Continue to Permit
+              </button>
               </div>
             </div>
           )}
