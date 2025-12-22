@@ -258,7 +258,9 @@ export default function Dashboard() {
                           📍 {permit.street_address}, {permit.city}, {permit.state}
                         </p>
                         <p>
-                          🔧 {permit.permit_type?.charAt(0).toUpperCase() + permit.permit_type?.slice(1)} • {permit.work_type?.replace('-', ' ')}
+                          🔧 {permit.permit_type 
+                              ? permit.permit_type.charAt(0).toUpperCase() + permit.permit_type.slice(1) 
+                              : 'Unknown'} • {permit.work_type?.replace('-', ' ') || 'Unknown'}
                         </p>
                         <p>
                           📅 {new Date(permit.created_at).toLocaleDateString('en-US', {
