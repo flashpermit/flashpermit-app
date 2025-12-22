@@ -1,19 +1,41 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import type { Profile } from '@/lib/supabase';
 
+interface Permit {
+  id: string;
+  manufacturer: string | null;
+  model_number: string | null;
+  street_address: string | null;
+  city: string | null;
+  state: string | null;
+  status: string;
+  permit_type: string | null;
+  work_type: string | null;
+  created_at: string;
+}
+
 export default function Dashboard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [permits, setPermits] = useState<Permit[]>([]);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
+    // Check for success message
+    if (searchParams.get('success') === 'permit_created') {
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 5000);
+    }
+
     checkUser();
-  }, []);
+  }, [searchParams]);
 
   async function checkUser() {
     try {
@@ -21,22 +43,34 @@ export default function Dashboard() {
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session) {
-        // Not logged in, redirect to login
         router.push('/login');
         return;
       }
 
       // Get user profile
-      const { data: profileData, error } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', session.user.id)
         .single();
 
-      if (error) {
-        console.error('Error fetching profile:', error);
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
       } else {
         setProfile(profileData);
+      }
+
+      // Get user's permits
+      const { data: permitsData, error: permitsError } = await supabase
+        .from('permits')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false });
+
+      if (permitsError) {
+        console.error('Error fetching permits:', permitsError);
+      } else {
+        setPermits(permitsData || []);
       }
 
       setLoading(false);
@@ -50,6 +84,26 @@ export default function Dashboard() {
     await supabase.auth.signOut();
     router.push('/login');
   }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'draft': return 'bg-gray-100 text-gray-800';
+      case 'submitted': return 'bg-blue-100 text-blue-800';
+      case 'approved': return 'bg-green-100 text-green-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'draft': return '📝';
+      case 'submitted': return '🚀';
+      case 'approved': return '✅';
+      case 'rejected': return '❌';
+      default: return '📄';
+    }
+  };
 
   if (loading) {
     return (
@@ -85,6 +139,14 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Success Message */}
+        {showSuccess && (
+          <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg flex items-center mb-6 shadow-lg">
+            <span className="text-2xl mr-3">✅</span>
+            <span className="font-medium">Permit created successfully!</span>
+          </div>
+        )}
+
         {/* Welcome Section */}
         <div className="bg-white rounded-lg shadow-xl p-8 mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -92,18 +154,28 @@ export default function Dashboard() {
           </h1>
           <p className="text-gray-600">
             {profile?.company_name && `${profile.company_name} • `}
-            Ready to file some permits?
+            {permits.length === 0 
+              ? "Ready to file your first permit?" 
+              : `You have ${permits.length} permit${permits.length !== 1 ? 's' : ''} in the system.`}
           </p>
         </div>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <div className="text-sm text-gray-600 mb-1">This Month</div>
+            <div className="text-sm text-gray-600 mb-1">Total Permits</div>
             <div className="text-3xl font-bold text-blue-600">
-              {profile?.permits_used_this_month || 0}
+              {permits.length}
             </div>
-            <div className="text-sm text-gray-500">Permits Filed</div>
+            <div className="text-sm text-gray-500">All Time</div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="text-sm text-gray-600 mb-1">Draft Permits</div>
+            <div className="text-3xl font-bold text-yellow-600">
+              {permits.filter(p => p.status === 'draft').length}
+            </div>
+            <div className="text-sm text-gray-500">Ready to Submit</div>
           </div>
 
           <div className="bg-white rounded-lg shadow-lg p-6">
@@ -113,18 +185,10 @@ export default function Dashboard() {
             </div>
             <div className="text-sm text-gray-500">Current Plan</div>
           </div>
-
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <div className="text-sm text-gray-600 mb-1">Status</div>
-            <div className="text-3xl font-bold text-green-600 capitalize">
-              {profile?.subscription_status || 'Active'}
-            </div>
-            <div className="text-sm text-gray-500">Account Status</div>
-          </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="bg-white rounded-lg shadow-xl p-8">
+        <div className="bg-white rounded-lg shadow-xl p-8 mb-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Quick Actions</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -142,27 +206,81 @@ export default function Dashboard() {
               <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              View Permit History
+              View All Permits
             </button>
           </div>
         </div>
 
-        {/* Empty State for Permits */}
-        <div className="mt-6 bg-white rounded-lg shadow-xl p-12 text-center">
-          <div className="text-gray-400 mb-4">
-            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
+        {/* Permits List */}
+        <div className="bg-white rounded-lg shadow-xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-xl font-semibold text-gray-900">Recent Permits</h3>
           </div>
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">No permits yet</h3>
-          <p className="text-gray-500 mb-6">
-            Upload your first equipment photo to get started!
-          </p>
-          <Link href="/upload">
-            <button className="bg-blue-600 text-white py-3 px-8 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-              Get Started
-            </button>
-          </Link>
+
+          {permits.length === 0 ? (
+            <div className="p-12 text-center">
+              <div className="text-gray-400 mb-4">
+                <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">No permits yet</h3>
+              <p className="text-gray-500 mb-6">
+                Upload your first equipment photo to get started!
+              </p>
+              <Link href="/upload">
+                <button className="bg-blue-600 text-white py-3 px-8 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                  Get Started
+                </button>
+              </Link>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-200">
+              {permits.slice(0, 5).map((permit) => (
+                <div
+                  key={permit.id}
+                  className="p-6 hover:bg-gray-50 transition-colors cursor-pointer"
+                  onClick={() => router.push(`/permit/${permit.id}`)}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <span className="text-2xl">{getStatusIcon(permit.status)}</span>
+                        <h4 className="text-lg font-semibold text-gray-900">
+                          {permit.manufacturer || 'Unknown'} {permit.model_number || ''}
+                        </h4>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(permit.status)}`}>
+                          {permit.status?.toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="space-y-1 text-sm text-gray-600">
+                        <p>
+                          📍 {permit.street_address}, {permit.city}, {permit.state}
+                        </p>
+                        <p>
+                          🔧 {permit.permit_type?.charAt(0).toUpperCase() + permit.permit_type?.slice(1)} • {permit.work_type?.replace('-', ' ')}
+                        </p>
+                        <p>
+                          📅 {new Date(permit.created_at).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="ml-4">
+                      <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
