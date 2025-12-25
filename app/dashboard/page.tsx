@@ -28,49 +28,40 @@ function DashboardContent() {
   const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
-    // Check for success message
     if (searchParams.get('success') === 'permit_created') {
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 5000);
     }
-
     checkUser();
   }, [searchParams]);
 
   async function checkUser() {
     try {
-      // Get current session
-      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Dashboard - Starting checkUser');
+      
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      console.log('Dashboard - User:', user);
+      console.log('Dashboard - User Error:', userError);
 
-      if (!session) {
-        router.push('/login');
-        return;
-      }
-
-      // Get user profile
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
+      if (userError || !user) {
+        console.log('Dashboard - No user found, waiting and trying again...');
+        
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const { data: { user: retryUser } } = await supabase.auth.getUser();
+        
+        if (!retryUser) {
+          console.log('Dashboard - Still no user after retry, redirecting to login');
+          router.push('/login');
+          return;
+        }
+        
+        console.log('Dashboard - Got user on retry:', retryUser);
+        await loadUserData(retryUser.id);
       } else {
-        setProfile(profileData);
-      }
-
-      // Get user's permits
-      const { data: permitsData, error: permitsError } = await supabase
-        .from('permits')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false });
-
-      if (permitsError) {
-        console.error('Error fetching permits:', permitsError);
-      } else {
-        setPermits(permitsData || []);
+        console.log('Dashboard - Got user immediately:', user);
+        await loadUserData(user.id);
       }
 
       setLoading(false);
@@ -79,6 +70,45 @@ function DashboardContent() {
       router.push('/login');
     }
   }
+
+ async function loadUserData(userId: string) {
+  console.log('Dashboard - Loading data for user:', userId);
+  
+  const { data: profileData, error: profileError } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single();
+
+  if (profileError) {
+    console.error('Error fetching profile:', profileError);
+  } else {
+    console.log('Dashboard - Profile loaded:', profileData);
+    
+    // ADD THIS CHECK:
+    if (!profileData || !profileData.onboarding_completed) {
+      console.log('Dashboard - Profile incomplete, redirecting to complete-profile');
+      router.push('/complete-profile');
+      return; // Stop loading other data
+    }
+    
+    setProfile(profileData);
+  }
+
+  // Only load permits if profile is complete
+  const { data: permitsData, error: permitsError } = await supabase
+    .from('permits')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (permitsError) {
+    console.error('Error fetching permits:', permitsError);
+  } else {
+    console.log('Dashboard - Permits loaded:', permitsData?.length || 0);
+    setPermits(permitsData || []);
+  }
+}
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -115,7 +145,6 @@ function DashboardContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800">
-      {/* Header */}
       <nav className="bg-blue-900/50 backdrop-blur-sm border-b border-blue-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -137,9 +166,7 @@ function DashboardContent() {
         </div>
       </nav>
 
-      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Success Message */}
         {showSuccess && (
           <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg flex items-center mb-6 shadow-lg">
             <span className="text-2xl mr-3">✅</span>
@@ -147,7 +174,6 @@ function DashboardContent() {
           </div>
         )}
 
-        {/* Welcome Section */}
         <div className="bg-white rounded-lg shadow-xl p-8 mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Welcome back, {profile?.full_name || 'Contractor'}! 👋
@@ -160,7 +186,6 @@ function DashboardContent() {
           </p>
         </div>
 
-        {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div className="bg-white rounded-lg shadow-lg p-6">
             <div className="text-sm text-gray-600 mb-1">Total Permits</div>
@@ -187,13 +212,22 @@ function DashboardContent() {
           </div>
         </div>
 
-        {/* Action Buttons */}
         <div className="bg-white rounded-lg shadow-xl p-8 mb-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Quick Actions</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <button
+              onClick={() => router.push('/permit/new')}
+              className="w-full bg-blue-600 text-white py-4 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center"
+            >
+              <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Submit New Permit
+            </button>
+
             <Link href="/upload">
-              <button className="w-full bg-blue-600 text-white py-4 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center">
+              <button className="w-full bg-gray-100 text-gray-700 py-4 px-6 rounded-lg font-semibold hover:bg-gray-200 transition-colors flex items-center justify-center">
                 <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -201,17 +235,9 @@ function DashboardContent() {
                 Upload Equipment Photo
               </button>
             </Link>
-
-            <button className="w-full bg-gray-100 text-gray-700 py-4 px-6 rounded-lg font-semibold hover:bg-gray-200 transition-colors flex items-center justify-center">
-              <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              View All Permits
-            </button>
           </div>
         </div>
 
-        {/* Permits List */}
         <div className="bg-white rounded-lg shadow-xl overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-xl font-semibold text-gray-900">Recent Permits</h3>
@@ -226,13 +252,14 @@ function DashboardContent() {
               </div>
               <h3 className="text-xl font-semibold text-gray-700 mb-2">No permits yet</h3>
               <p className="text-gray-500 mb-6">
-                Upload your first equipment photo to get started!
+                Submit your first permit to get started!
               </p>
-              <Link href="/upload">
-                <button className="bg-blue-600 text-white py-3 px-8 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-                  Get Started
-                </button>
-              </Link>
+              <button
+                onClick={() => router.push('/permit/new')}
+                className="bg-blue-600 text-white py-3 px-8 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+              >
+                Get Started
+              </button>
             </div>
           ) : (
             <div className="divide-y divide-gray-200">
