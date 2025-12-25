@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Add to .gitignore
+echo "shape-phx-session.json" >> .gitignore
+echo "*.session.json" >> .gitignore
+
+# Test files (optional - if you don't want them in production)
+testfiles/
+debug-*.ts
