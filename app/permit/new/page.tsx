@@ -27,35 +27,36 @@ function PermitFormContent() {
     equipmentType: searchParams.get('equipmentType') || '',
   });
 
-  // NEW: Separate AC and Furnace data
-  const [acData, setAcData] = useState({
-    manufacturer: '',
-    model: '',
-    serialNumber: '',
-    btu: '',
-    voltage: '',
-    seer: '',
-    refrigerant: '',
-    tonnage: '',
-  });
+  
+// NEW: Separate AC and Furnace data - INITIALIZED FROM URL PARAMS
+const [acData, setAcData] = useState({
+  manufacturer: searchParams.get('manufacturer') || '',
+  model: searchParams.get('model') || '',
+  serialNumber: searchParams.get('serialNumber') || '',
+  btu: searchParams.get('btu') || '',
+  voltage: searchParams.get('voltage') || '',
+  seer: searchParams.get('seer') || '',
+  refrigerant: searchParams.get('refrigerant') || '',
+  tonnage: '',
+});
 
-  const [furnaceData, setFurnaceData] = useState({
-    manufacturer: '',
-    model: '',
-    serialNumber: '',
-    btu: '',
-    fuelType: 'gas', // gas or electric
-  });
+const [furnaceData, setFurnaceData] = useState({
+  manufacturer: searchParams.get('manufacturer') || '',
+  model: searchParams.get('model') || '',
+  serialNumber: searchParams.get('serialNumber') || '',
+  btu: searchParams.get('btu') || '',
+  fuelType: 'gas',
+});
 
-  const [miniSplitData, setMiniSplitData] = useState({
-    manufacturer: '',
-    model: '',
-    serialNumber: '',
-    btu: '',
-    numberOfZones: '',
-    indoorUnitType: 'wall-mounted',
-    outdoorUnitType: 'single-zone',
-  });
+const [miniSplitData, setMiniSplitData] = useState({
+  manufacturer: searchParams.get('manufacturer') || '',
+  model: searchParams.get('model') || '',
+  serialNumber: searchParams.get('serialNumber') || '',
+  btu: searchParams.get('btu') || '',
+  numberOfZones: '',
+  indoorUnitType: 'wall-mounted',
+  outdoorUnitType: 'single-zone',
+});
 
   // Property information
   const [propertyData, setPropertyData] = useState({
