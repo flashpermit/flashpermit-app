@@ -1,0 +1,25 @@
+{
+  "stepNumber": 8,
+  "stepName": "Submit Documents",
+  "fields": [
+    {
+      "type": "file-upload",
+      "label": "Upload Documents",
+      "selector": "getByLabel('Upload Documents')",
+      "value": null,
+      "action": "upload",
+      "required": true,
+      "currentValue": null
+    }
+  ],
+  "nextButtonSelector": "getByRole('button', { name: 'Next' })",
+  "hasErrors": false,
+  "errorMessages": [],
+  "isLoading": true,
+  "recommendations": [
+    "Wait for the loading spinner to disappear before proceeding.",
+    "Upload the required documents for the permit application.",
+    "Click the 'Next' button to proceed to the next step."
+  ],
+  "confidence": 85
+}

@@ -1,0 +1,114 @@
+{
+  "stepNumber": 7,
+  "stepName": "Work Item Details",
+  "fields": [
+    {
+      "type": "text",
+      "label": "Installation Type",
+      "selector": "getByLabel('Installation Type')",
+      "value": "ac-furnace",
+      "action": "fill",
+      "required": true,
+      "currentValue": null
+    },
+    {
+      "type": "text",
+      "label": "Valuation Cost",
+      "selector": "getByLabel('Valuation Cost')",
+      "value": "5000",
+      "action": "fill",
+      "required": true,
+      "currentValue": null
+    },
+    {
+      "type": "text",
+      "label": "Equipment Tonnage",
+      "selector": "getByLabel('Equipment Tonnage')",
+      "value": "3.5 tons",
+      "action": "fill",
+      "required": true,
+      "currentValue": null
+    },
+    {
+      "type": "text",
+      "label": "Street Address",
+      "selector": "getByLabel('Street Address')",
+      "value": "3825 E CAMELBACK RD",
+      "action": "fill",
+      "required": true,
+      "currentValue": null
+    },
+    {
+      "type": "text",
+      "label": "City",
+      "selector": "getByLabel('City')",
+      "value": "Phoenix, AZ 85018",
+      "action": "fill",
+      "required": true,
+      "currentValue": null
+    },
+    {
+      "type": "text",
+      "label": "Contractor",
+      "selector": "getByLabel('Contractor')",
+      "value": "Einstein Heating & Cooling",
+      "action": "fill",
+      "required": true,
+      "currentValue": null
+    },
+    {
+      "type": "text",
+      "label": "ROC License",
+      "selector": "getByLabel('ROC License')",
+      "value": "ROC123456",
+      "action": "fill",
+      "required": true,
+      "currentValue": null
+    },
+    {
+      "type": "text",
+      "label": "City Privilege License",
+      "selector": "getByLabel('City Privilege License')",
+      "value": "PL789012",
+      "action": "fill",
+      "required": true,
+      "currentValue": null
+    },
+    {
+      "type": "text",
+      "label": "Equipment Manufacturer",
+      "selector": "getByLabel('Equipment Manufacturer')",
+      "value": "Carrier",
+      "action": "fill",
+      "required": true,
+      "currentValue": null
+    },
+    {
+      "type": "text",
+      "label": "Equipment Model",
+      "selector": "getByLabel('Equipment Model')",
+      "value": "24ACC636A003",
+      "action": "fill",
+      "required": true,
+      "currentValue": null
+    },
+    {
+      "type": "text",
+      "label": "BTU Rating",
+      "selector": "getByLabel('BTU Rating')",
+      "value": "36000",
+      "action": "fill",
+      "required": true,
+      "currentValue": null
+    }
+  ],
+  "nextButtonSelector": "getByRole('button', { name: 'Next' })",
+  "hasErrors": false,
+  "errorMessages": [],
+  "isLoading": false,
+  "recommendations": [
+    "Fill in all required fields with the provided permit data.",
+    "Click the 'Next' button to proceed to the next step."
+  ],
+  "confidence": 85
+}

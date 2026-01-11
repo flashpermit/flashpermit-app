@@ -1,0 +1,61 @@
+{
+  "stepNumber": 7,
+  "stepName": "Login Page",
+  "fields": [
+    {
+      "type": "text",
+      "label": "Email Address",
+      "selector": "getByLabel('Email Address')",
+      "value": null,
+      "action": "fill",
+      "required": true,
+      "currentValue": null
+    },
+    {
+      "type": "password",
+      "label": "Password",
+      "selector": "getByLabel('Password')",
+      "value": null,
+      "action": "fill",
+      "required": true,
+      "currentValue": null
+    },
+    {
+      "type": "link",
+      "label": "Forgot your password?",
+      "selector": "getByText('Forgot your password?')",
+      "value": null,
+      "action": "click",
+      "required": false,
+      "currentValue": null
+    },
+    {
+      "type": "button",
+      "label": "Sign in",
+      "selector": "getByRole('button', { name: 'Sign in' })",
+      "value": null,
+      "action": "click",
+      "required": true,
+      "currentValue": null
+    },
+    {
+      "type": "link",
+      "label": "Sign up now",
+      "selector": "getByText('Sign up now')",
+      "value": null,
+      "action": "click",
+      "required": false,
+      "currentValue": null
+    }
+  ],
+  "nextButtonSelector": "getByRole('button', { name: 'Sign in' })",
+  "hasErrors": false,
+  "errorMessages": [],
+  "isLoading": false,
+  "recommendations": [
+    "Fill in the 'Email Address' field with the user's email.",
+    "Fill in the 'Password' field with the user's password.",
+    "Click the 'Sign in' button to proceed."
+  ],
+  "confidence": 95
+}

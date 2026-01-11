@@ -1,0 +1,24 @@
+{
+  "stepNumber": 2,
+  "stepName": "Address",
+  "fields": [
+    {
+      "type": "text",
+      "label": "Address",
+      "selector": "getByLabel('Address')",
+      "value": "3825 E CAMELBACK RD",
+      "action": "fill",
+      "required": true,
+      "currentValue": null
+    }
+  ],
+  "nextButtonSelector": "getByRole('button', { name: 'Next' })",
+  "hasErrors": false,
+  "errorMessages": [],
+  "isLoading": false,
+  "recommendations": [
+    "Fill the 'Address' field with '3825 E CAMELBACK RD'.",
+    "Click the 'Next' button to proceed to the next step."
+  ],
+  "confidence": 90
+}

@@ -1,0 +1,33 @@
+{
+  "stepNumber": 9,
+  "stepName": "Confirmation",
+  "fields": [
+    {
+      "type": "text",
+      "label": "Address",
+      "selector": "getByLabel('Address')",
+      "value": "3825 E CAMELBACK RD",
+      "action": "fill",
+      "required": true,
+      "currentValue": "345"
+    },
+    {
+      "type": "button",
+      "label": "Next",
+      "selector": "getByRole('button', { name: 'Next' })",
+      "value": null,
+      "action": "click",
+      "required": false,
+      "currentValue": null
+    }
+  ],
+  "nextButtonSelector": "getByRole('button', { name: 'Next' })",
+  "hasErrors": false,
+  "errorMessages": [],
+  "isLoading": false,
+  "recommendations": [
+    "Update the 'Address' field with the correct value: '3825 E CAMELBACK RD'.",
+    "Click the 'Next' button to proceed to the next step."
+  ],
+  "confidence": 85
+}
