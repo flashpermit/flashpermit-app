@@ -315,7 +315,7 @@ async function runBot(permit: PermitData): Promise<BotResult> {
   // Convert permit data to bot format
   const botPermitData = {
     // Installation type
-    installationType: permit.installation_type || 'ac-furnace',
+    installationType: (permit.installation_type || 'ac-furnace') as 'ac-furnace' | 'ac-only' | 'furnace-only' | 'mini-split' | 'custom',
     
     // Contractor info
     rocLicenseNumber: permit.roc_license_number,
