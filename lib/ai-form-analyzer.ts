@@ -59,7 +59,7 @@ export interface PermitData {
   btu?: number;
   
   // Installation Type
-  installationType: 'ac-furnace' | 'ac-only' | 'furnace-only' | 'mini-split';
+  installationType: 'ac-furnace' | 'ac-only' | 'furnace-only' | 'mini-split' | 'custom';
 }
 
 export class AIFormAnalyzer {
