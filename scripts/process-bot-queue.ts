@@ -280,7 +280,7 @@ async function processPermit(permit: PermitRecord): Promise<ProcessResult> {
 
   // Convert to bot format
   const botPermitData = {
-    installationType: permit.installation_type || 'ac-furnace',
+    installationType: (permit.installation_type || 'ac-furnace') as 'ac-furnace' | 'ac-only' | 'furnace-only' | 'mini-split' | 'custom',
     rocLicenseNumber: permit.roc_license_number,
     cityPrivilegeLicense: permit.city_privilege_license,
     contractorName: permit.contractor_name,
